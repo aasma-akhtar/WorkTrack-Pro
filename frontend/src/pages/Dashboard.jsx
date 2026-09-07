@@ -12,6 +12,18 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+const sampleChartData = Array.from({ length: 7 }, (_, index) => {
+  const date = new Date();
+  date.setDate(date.getDate() - (6 - index));
+
+  return {
+    date: date.toISOString(),
+    present: [6, 8, 7, 9, 8, 10, 7][index],
+    late: [1, 1, 2, 1, 2, 1, 1][index],
+    half_day: [1, 0, 1, 0, 0, 1, 0][index],
+  };
+});
+
 export default function Dashboard({ user, token }) {
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +52,9 @@ export default function Dashboard({ user, token }) {
   if (isLoading) return <div style={{ color: 'var(--text-muted)' }}>Loading analytics dashboard data...</div>;
   if (error) return <div style={{ color: 'var(--danger)' }}>Error loading stats: {error}</div>;
   if (!stats) return null;
+
+  const chartData = stats.chart && stats.chart.length > 0 ? stats.chart : sampleChartData;
+  const chartEmployeeCount = Math.max(Number(stats.totalEmployees) || 0, 10);
 
   return (
     <div>
@@ -107,9 +122,9 @@ export default function Dashboard({ user, token }) {
                 <div style={{ position: 'absolute', left: 0, bottom: '110px', fontSize: '11px', color: 'var(--text-dim)' }}>50%</div>
                 <div style={{ position: 'absolute', left: 0, bottom: '190px', fontSize: '11px', color: 'var(--text-dim)' }}>100%</div>
                 
-                {stats.chart && stats.chart.length > 0 ? stats.chart.map((day, i) => {
+                {chartData.map((day, i) => {
                   const total = parseInt(day.present || 0) + parseInt(day.late || 0) + parseInt(day.half_day || 0);
-                  const rate = stats.totalEmployees > 0 ? (total / stats.totalEmployees) * 100 : 0;
+                  const rate = (total / chartEmployeeCount) * 100;
                   const barHeight = Math.min(Math.max(rate * 1.8, 10), 180); // scale up height
                   const formattedDate = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' });
 
@@ -145,9 +160,7 @@ export default function Dashboard({ user, token }) {
                       </span>
                     </div>
                   );
-                }) : (
-                  <div style={{ width: '100%', textAlign: 'center', color: 'var(--text-dim)' }}>No recent activity logged.</div>
-                )}
+                  })}
               </div>
             </div>
 
